@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import fitz
+import pymupdf
 import re
 
 
@@ -37,7 +37,7 @@ def extract_pdf(pdf_path: Path) -> list[dict]:
     """
     pages = []
 
-    with fitz.open(pdf_path) as document:
+    with pymupdf.open(pdf_path) as document:
         for page_number, page in enumerate(document, start=1):
             raw_text = page.get_text("text")
             text = clean_text(raw_text)

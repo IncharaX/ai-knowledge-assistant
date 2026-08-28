@@ -10,8 +10,6 @@ TARGET_TOKENS = 650
 MAX_TOKENS = 800
 OVERLAP_TOKENS = 100
 
-# cl100k_base is a good general-purpose tokenizer for measuring
-# the size of text that will eventually be sent to an LLM.
 ENCODER = tiktoken.get_encoding("cl100k_base")
 
 
@@ -31,6 +29,13 @@ def token_count(text: str) -> int:
     return len(ENCODER.encode(text))
 
 
+def count_tokens(text: str) -> int:
+    """
+    Public helper used by the ingestion pipeline.
+    """
+    return token_count(text)
+
+
 def normalize_line(line: str) -> str:
     return re.sub(r"\s+", " ", line).strip()
 
@@ -40,9 +45,8 @@ def remove_repeated_boilerplate(pages: list[dict]) -> list[dict]:
     Remove lines that repeatedly appear at the top or bottom
     of multiple pages.
 
-    We only inspect the first and last few lines so that
-    legitimate repeated terminology inside the actual content
-    isn't accidentally removed.
+    We intentionally only inspect page boundaries so that
+    repeated terminology inside actual content is preserved.
     """
     if len(pages) < 2:
         return pages
@@ -65,7 +69,10 @@ def remove_repeated_boilerplate(pages: list[dict]) -> list[dict]:
 
     counts = Counter(candidates)
 
-    minimum_occurrences = max(2, math.ceil(len(pages) * 0.5))
+    minimum_occurrences = max(
+        2,
+        math.ceil(len(pages) * 0.5),
+    )
 
     boilerplate = {
         line
@@ -98,18 +105,21 @@ def remove_repeated_boilerplate(pages: list[dict]) -> list[dict]:
     return cleaned_pages
 
 
-def split_into_segments(pages: list[dict]) -> list[TextSegment]:
+def split_into_segments(
+    pages: list[dict],
+) -> list[TextSegment]:
     """
-    Convert page text into small logical segments.
+    Convert page text into logical segments.
 
-    Blank lines are treated as natural boundaries. When a PDF
-    doesn't preserve paragraph boundaries, individual lines
-    remain separate segments and can still be grouped later.
+    Blank lines are treated as natural boundaries.
     """
     segments = []
 
     for page in pages:
-        raw_segments = re.split(r"\n\s*\n", page["text"])
+        raw_segments = re.split(
+            r"\n\s*\n",
+            page["text"],
+        )
 
         for raw_segment in raw_segments:
             text = raw_segment.strip()
@@ -127,16 +137,60 @@ def split_into_segments(pages: list[dict]) -> list[TextSegment]:
     return segments
 
 
-def split_oversized_segment(segment: TextSegment) -> list[TextSegment]:
+def split_long_segment(
+    segment: TextSegment,
+) -> list[TextSegment]:
     """
-    Split a segment that exceeds MAX_TOKENS.
-
-    Sentences are preferred as boundaries. If an individual
-    sentence is still too large, it is split by tokens.
+    Split an oversized segment while trying to preserve
+    meaningful line and sentence boundaries.
     """
     if token_count(segment.text) <= MAX_TOKENS:
         return [segment]
 
+    lines = [
+        line.strip()
+        for line in segment.text.splitlines()
+        if line.strip()
+    ]
+
+    # Prefer line-based splitting for algorithm steps,
+    # pseudocode, lists, and code-like PDF content.
+    if len(lines) > 1:
+        pieces: list[TextSegment] = []
+        current_lines: list[str] = []
+        current_tokens = 0
+
+        for line in lines:
+            line_tokens = token_count(line)
+
+            if (
+                current_lines
+                and current_tokens + line_tokens > MAX_TOKENS
+            ):
+                pieces.append(
+                    TextSegment(
+                        text="\n".join(current_lines),
+                        page_number=segment.page_number,
+                    )
+                )
+
+                current_lines = []
+                current_tokens = 0
+
+            current_lines.append(line)
+            current_tokens += line_tokens
+
+        if current_lines:
+            pieces.append(
+                TextSegment(
+                    text="\n".join(current_lines),
+                    page_number=segment.page_number,
+                )
+            )
+
+        return pieces
+
+    # For normal prose, prefer sentence boundaries.
     sentences = re.split(
         r"(?<=[.!?])\s+",
         segment.text,
@@ -144,6 +198,7 @@ def split_oversized_segment(segment: TextSegment) -> list[TextSegment]:
 
     pieces: list[TextSegment] = []
     current: list[str] = []
+    current_tokens = 0
 
     for sentence in sentences:
         sentence = sentence.strip()
@@ -151,18 +206,24 @@ def split_oversized_segment(segment: TextSegment) -> list[TextSegment]:
         if not sentence:
             continue
 
-        candidate = " ".join(current + [sentence])
+        sentence_tokens = token_count(sentence)
 
-        if current and token_count(candidate) > MAX_TOKENS:
+        if (
+            current
+            and current_tokens + sentence_tokens > MAX_TOKENS
+        ):
             pieces.append(
                 TextSegment(
                     text=" ".join(current),
                     page_number=segment.page_number,
                 )
             )
-            current = [sentence]
-        else:
-            current.append(sentence)
+
+            current = []
+            current_tokens = 0
+
+        current.append(sentence)
+        current_tokens += sentence_tokens
 
     if current:
         pieces.append(
@@ -172,7 +233,7 @@ def split_oversized_segment(segment: TextSegment) -> list[TextSegment]:
             )
         )
 
-    # A single sentence can itself be too large.
+    # A single sentence can itself exceed MAX_TOKENS.
     final_pieces: list[TextSegment] = []
 
     for piece in pieces:
@@ -182,9 +243,18 @@ def split_oversized_segment(segment: TextSegment) -> list[TextSegment]:
 
         tokens = ENCODER.encode(piece.text)
 
-        for start in range(0, len(tokens), MAX_TOKENS):
-            token_slice = tokens[start:start + MAX_TOKENS]
-            text = ENCODER.decode(token_slice).strip()
+        for start in range(
+            0,
+            len(tokens),
+            MAX_TOKENS,
+        ):
+            token_slice = tokens[
+                start:start + MAX_TOKENS
+            ]
+
+            text = ENCODER.decode(
+                token_slice
+            ).strip()
 
             if text:
                 final_pieces.append(
@@ -197,18 +267,47 @@ def split_oversized_segment(segment: TextSegment) -> list[TextSegment]:
     return final_pieces
 
 
-def build_chunks(segments: list[TextSegment]) -> list[Chunk]:
+def build_overlap(
+    segments: list[TextSegment],
+) -> list[TextSegment]:
     """
-    Group segments into chunks around TARGET_TOKENS without
-    exceeding MAX_TOKENS.
+    Build an overlap from the end of the previous chunk.
 
-    Overlap is created from the end of the previous chunk.
+    Whole segments are preferred so we don't create awkward
+    partial sentences or broken algorithm steps.
+    """
+    overlap: list[TextSegment] = []
+    overlap_tokens = 0
+
+    for segment in reversed(segments):
+        segment_tokens = token_count(segment.text)
+
+        if overlap_tokens + segment_tokens > OVERLAP_TOKENS:
+            break
+
+        overlap.insert(0, segment)
+        overlap_tokens += segment_tokens
+
+    return overlap
+
+
+def build_chunks(
+    segments: list[TextSegment],
+) -> list[Chunk]:
+    """
+    Build retrieval chunks.
+
+    TARGET_TOKENS is the preferred size.
+    MAX_TOKENS is the hard ceiling.
+
+    We only split when adding the next segment would exceed
+    MAX_TOKENS. This avoids unnecessary tiny chunks.
     """
     expanded_segments: list[TextSegment] = []
 
     for segment in segments:
         expanded_segments.extend(
-            split_oversized_segment(segment)
+            split_long_segment(segment)
         )
 
     chunks: list[Chunk] = []
@@ -221,33 +320,31 @@ def build_chunks(segments: list[TextSegment]) -> list[Chunk]:
 
         if (
             current_segments
-            and current_tokens + segment_tokens > TARGET_TOKENS
+            and current_tokens + segment_tokens > MAX_TOKENS
         ):
             chunks.append(
                 Chunk(
                     text="\n\n".join(
-                        item.text for item in current_segments
+                        item.text
+                        for item in current_segments
                     ),
                     page_numbers=sorted(
-                        {item.page_number for item in current_segments}
+                        {
+                            item.page_number
+                            for item in current_segments
+                        }
                     ),
                 )
             )
 
-            overlap_segments: list[TextSegment] = []
-            overlap_tokens = 0
+            current_segments = build_overlap(
+                current_segments
+            )
 
-            for previous in reversed(current_segments):
-                previous_tokens = token_count(previous.text)
-
-                if overlap_tokens + previous_tokens > OVERLAP_TOKENS:
-                    break
-
-                overlap_segments.insert(0, previous)
-                overlap_tokens += previous_tokens
-
-            current_segments = overlap_segments
-            current_tokens = overlap_tokens
+            current_tokens = sum(
+                token_count(item.text)
+                for item in current_segments
+            )
 
         current_segments.append(segment)
         current_tokens += segment_tokens
@@ -256,10 +353,14 @@ def build_chunks(segments: list[TextSegment]) -> list[Chunk]:
         chunks.append(
             Chunk(
                 text="\n\n".join(
-                    item.text for item in current_segments
+                    item.text
+                    for item in current_segments
                 ),
                 page_numbers=sorted(
-                    {item.page_number for item in current_segments}
+                    {
+                        item.page_number
+                        for item in current_segments
+                    }
                 ),
             )
         )
@@ -267,12 +368,15 @@ def build_chunks(segments: list[TextSegment]) -> list[Chunk]:
     return chunks
 
 
-def chunk_document(pages: list[dict]) -> list[Chunk]:
-    cleaned_pages = remove_repeated_boilerplate(pages)
-    segments = split_into_segments(cleaned_pages)
+def chunk_document(
+    pages: list[dict],
+) -> list[Chunk]:
+    cleaned_pages = remove_repeated_boilerplate(
+        pages
+    )
+
+    segments = split_into_segments(
+        cleaned_pages
+    )
 
     return build_chunks(segments)
-
-
-def count_tokens(text: str) -> int:
-    return token_count(text)
