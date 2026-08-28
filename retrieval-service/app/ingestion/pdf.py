@@ -1,22 +1,31 @@
 from pathlib import Path
 
 import fitz
+import re
 
 
 def clean_text(text: str) -> str:
     """
     Normalize obvious PDF extraction noise while preserving
-    meaningful line breaks and content structure.
+    paragraph boundaries.
     """
-    lines = []
+    blocks = re.split(r"\n\s*\n", text)
 
-    for line in text.splitlines():
-        cleaned = " ".join(line.split())
+    cleaned_blocks = []
 
-        if cleaned:
-            lines.append(cleaned)
+    for block in blocks:
+        lines = []
 
-    return "\n".join(lines)
+        for line in block.splitlines():
+            cleaned = " ".join(line.split())
+
+            if cleaned:
+                lines.append(cleaned)
+
+        if lines:
+            cleaned_blocks.append("\n".join(lines))
+
+    return "\n\n".join(cleaned_blocks)
 
 
 def extract_pdf(pdf_path: Path) -> list[dict]:
