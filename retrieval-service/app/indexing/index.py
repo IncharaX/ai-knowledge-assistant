@@ -3,6 +3,7 @@ from pathlib import Path
 
 from app.embeddings.model import EmbeddingModel
 from app.vector_store.chroma import ChromaStore
+from app.indexing.quality import should_index
 
 
 RETRIEVAL_SERVICE_ROOT = Path(__file__).resolve().parents[2]
@@ -40,22 +41,31 @@ def prepare_records(
     list[dict],
 ]:
     """
-    Convert processed chunks into records suitable
-    for embedding and storage.
+    Convert useful processed chunks into records
+    suitable for embedding and storage.
     """
+
     ids: list[str] = []
     texts: list[str] = []
     metadatas: list[dict] = []
+
+    skipped_chunks = 0
 
     for document in documents:
         document_id = document["document_id"]
         source = document["source"]
 
         for chunk in document["chunks"]:
+            text = chunk["text"]
+
+            if not should_index(text):
+                skipped_chunks += 1
+                continue
+
             page_numbers = chunk["page_numbers"]
 
             ids.append(chunk["chunk_id"])
-            texts.append(chunk["text"])
+            texts.append(text)
 
             metadatas.append(
                 {
@@ -65,6 +75,10 @@ def prepare_records(
                     "page_end": max(page_numbers),
                 }
             )
+
+    print(
+        f"Skipped {skipped_chunks} low-quality chunks."
+    )
 
     return ids, texts, metadatas
 
@@ -105,6 +119,10 @@ def main() -> None:
     print("\nConnecting to ChromaDB...")
 
     store = ChromaStore()
+
+    print("Resetting existing index...")
+
+    store.reset()
 
     store.upsert(
         ids=ids,

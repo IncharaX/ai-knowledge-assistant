@@ -75,3 +75,15 @@ class ChromaStore:
                 "distances",
         ],
     )
+
+    def reset(self) -> None:
+        """
+        Delete all chunks from the current collection.
+        """
+
+        existing_ids = self.collection.get()["ids"]
+
+        if existing_ids:
+            self.collection.delete(
+            ids=existing_ids
+        )

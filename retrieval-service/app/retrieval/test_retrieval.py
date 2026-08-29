@@ -4,7 +4,7 @@ from app.retrieval.retriever import SemanticRetriever
 def main() -> None:
     retriever = SemanticRetriever()
 
-    query = "What is the difference between Big O and Theta notation?"
+    query = "What is an algorithm?"
 
     print(f"\nQuery: {query}\n")
 
