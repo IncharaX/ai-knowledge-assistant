@@ -1,3 +1,6 @@
+from typing import Any
+
+from app.generation.citations import build_sources
 from app.generation.llm import OpenRouterLLM
 from app.generation.prompt import build_rag_prompt
 from app.retrieval.retriever import SemanticRetriever
@@ -5,7 +8,8 @@ from app.retrieval.retriever import SemanticRetriever
 
 class RAGGenerator:
     """
-    Coordinates retrieval and answer generation.
+    Coordinates retrieval, grounded generation,
+    and source construction.
     """
 
     def __init__(self) -> None:
@@ -16,10 +20,10 @@ class RAGGenerator:
         self,
         question: str,
         top_k: int = 5,
-    ) -> str:
+    ) -> dict[str, Any]:
         """
-        Retrieve relevant context and generate
-        a grounded answer.
+        Retrieve context, generate an answer,
+        and return deterministic source metadata.
         """
 
         chunks = self.retriever.search(
@@ -36,4 +40,9 @@ class RAGGenerator:
             prompt=prompt,
         )
 
-        return answer
+        sources = build_sources(chunks)
+
+        return {
+            "answer": answer,
+            "sources": sources,
+        }

@@ -18,12 +18,29 @@ def main() -> None:
     print("GENERATING ANSWER...")
     print("=" * 80 + "\n")
 
-    answer = generator.answer(
+    response = generator.answer(
         question=question,
         top_k=5,
     )
 
-    print(answer)
+    print("ANSWER:\n")
+
+    print(response["answer"])
+
+    print("\n" + "=" * 80)
+    print("SOURCES")
+    print("=" * 80)
+
+    for index, source in enumerate(
+        response["sources"],
+        start=1,
+    ):
+        print(
+            f"\n[{index}] "
+            f"{source['source']} "
+            f"(Pages {source['page_start']}"
+            f"-{source['page_end']})"
+        )
 
 
 if __name__ == "__main__":
