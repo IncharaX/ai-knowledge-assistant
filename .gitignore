@@ -25,3 +25,5 @@ data/documents/
 
 # Logs
 *.log
+
+storage/

@@ -2,3 +2,5 @@ fastapi
 uvicorn[standard]
 PyMuPDF
 tiktoken
+chromadb
+sentence-transformers
