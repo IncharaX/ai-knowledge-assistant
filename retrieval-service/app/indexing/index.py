@@ -5,7 +5,9 @@ from app.embeddings.model import EmbeddingModel
 from app.vector_store.chroma import ChromaStore
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+RETRIEVAL_SERVICE_ROOT = Path(__file__).resolve().parents[2]
+
+PROJECT_ROOT = RETRIEVAL_SERVICE_ROOT.parent
 
 CHUNKS_DIR = (
     PROJECT_ROOT
@@ -13,7 +15,6 @@ CHUNKS_DIR = (
     / "processed"
     / "chunks"
 )
-
 
 def load_chunk_files() -> list[dict]:
     """
@@ -80,6 +81,11 @@ def main() -> None:
     print(
         f"Loaded {len(ids)} chunks "
         f"from {len(documents)} documents."
+    )
+
+    if not ids:
+        raise RuntimeError(
+        f"No chunks found in: {CHUNKS_DIR}"
     )
 
     print("\nLoading embedding model...")
