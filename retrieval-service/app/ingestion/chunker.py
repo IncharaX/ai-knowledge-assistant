@@ -17,6 +17,7 @@ ENCODER = tiktoken.get_encoding("cl100k_base")
 class TextSegment:
     text: str
     page_number: int
+    force_new_chunk: bool = False
 
 
 @dataclass
@@ -30,9 +31,6 @@ def token_count(text: str) -> int:
 
 
 def count_tokens(text: str) -> int:
-    """
-    Public helper used by the ingestion pipeline.
-    """
     return token_count(text)
 
 
@@ -40,13 +38,32 @@ def normalize_line(line: str) -> str:
     return re.sub(r"\s+", " ", line).strip()
 
 
-def remove_repeated_boilerplate(pages: list[dict]) -> list[dict]:
+def is_page_marker(line: str) -> bool:
+    """
+    Detect standalone page-number markers commonly produced
+    by PDF extraction, such as:
+
+        — 5 —
+        – 5 –
+        - 5 -
+    """
+    return bool(
+        re.fullmatch(
+            r"[—–-]\s*\d+\s*[—–-]",
+            line.strip(),
+        )
+    )
+
+
+def remove_repeated_boilerplate(
+    pages: list[dict],
+) -> list[dict]:
     """
     Remove lines that repeatedly appear at the top or bottom
     of multiple pages.
 
-    We intentionally only inspect page boundaries so that
-    repeated terminology inside actual content is preserved.
+    Only page-boundary lines are considered so that repeated
+    terminology inside actual content is preserved.
     """
     if len(pages) < 2:
         return pages
@@ -59,7 +76,11 @@ def remove_repeated_boilerplate(pages: list[dict]) -> list[dict]:
             for line in page["text"].splitlines()
         ]
 
-        lines = [line for line in lines if line]
+        lines = [
+            line
+            for line in lines
+            if line and not is_page_marker(line)
+        ]
 
         boundary_lines = lines[:3] + lines[-3:]
 
@@ -83,17 +104,21 @@ def remove_repeated_boilerplate(pages: list[dict]) -> list[dict]:
     cleaned_pages = []
 
     for page in pages:
-        lines = page["text"].splitlines()
         cleaned_lines = []
 
-        for line in lines:
+        for line in page["text"].splitlines():
             normalized = normalize_line(line)
+
+            if not normalized:
+                continue
+
+            if is_page_marker(normalized):
+                continue
 
             if normalized in boilerplate:
                 continue
 
-            if normalized:
-                cleaned_lines.append(normalized)
+            cleaned_lines.append(normalized)
 
         cleaned_pages.append(
             {
@@ -105,21 +130,52 @@ def remove_repeated_boilerplate(pages: list[dict]) -> list[dict]:
     return cleaned_pages
 
 
+def is_front_matter_page(page: dict) -> bool:
+    """
+    Identify obvious introductory/administrative pages.
+
+    We keep these pages in the processed dataset, but prevent
+    them from being merged into the first knowledge chunk.
+    """
+    text = page["text"].lower()
+
+    has_table_of_contents = (
+        "table of contents" in text
+    )
+
+    has_course_metadata = (
+        "course" in text
+        and "module" in text
+        and "reference" in text
+    )
+
+    return (
+        has_table_of_contents
+        or has_course_metadata
+    )
+
+
 def split_into_segments(
     pages: list[dict],
 ) -> list[TextSegment]:
     """
     Convert page text into logical segments.
 
-    Blank lines are treated as natural boundaries.
+    Front-matter pages are separated from normal knowledge
+    content so that titles and tables of contents don't get
+    merged into the first retrieval chunk.
     """
-    segments = []
+    segments: list[TextSegment] = []
 
     for page in pages:
+        page_number = page["page_number"]
+
         raw_segments = re.split(
             r"\n\s*\n",
             page["text"],
         )
+
+        first_segment = True
 
         for raw_segment in raw_segments:
             text = raw_segment.strip()
@@ -130,9 +186,15 @@ def split_into_segments(
             segments.append(
                 TextSegment(
                     text=text,
-                    page_number=page["page_number"],
+                    page_number=page_number,
+                    force_new_chunk=(
+                        is_front_matter_page(page)
+                        and first_segment
+                    ),
                 )
             )
+
+            first_segment = False
 
     return segments
 
@@ -141,8 +203,8 @@ def split_long_segment(
     segment: TextSegment,
 ) -> list[TextSegment]:
     """
-    Split an oversized segment while trying to preserve
-    meaningful line and sentence boundaries.
+    Split an oversized segment while preferring meaningful
+    line and sentence boundaries.
     """
     if token_count(segment.text) <= MAX_TOKENS:
         return [segment]
@@ -153,8 +215,6 @@ def split_long_segment(
         if line.strip()
     ]
 
-    # Prefer line-based splitting for algorithm steps,
-    # pseudocode, lists, and code-like PDF content.
     if len(lines) > 1:
         pieces: list[TextSegment] = []
         current_lines: list[str] = []
@@ -171,6 +231,10 @@ def split_long_segment(
                     TextSegment(
                         text="\n".join(current_lines),
                         page_number=segment.page_number,
+                        force_new_chunk=(
+                            segment.force_new_chunk
+                            and not pieces
+                        ),
                     )
                 )
 
@@ -185,12 +249,15 @@ def split_long_segment(
                 TextSegment(
                     text="\n".join(current_lines),
                     page_number=segment.page_number,
+                    force_new_chunk=(
+                        segment.force_new_chunk
+                        and not pieces
+                    ),
                 )
             )
 
         return pieces
 
-    # For normal prose, prefer sentence boundaries.
     sentences = re.split(
         r"(?<=[.!?])\s+",
         segment.text,
@@ -216,6 +283,10 @@ def split_long_segment(
                 TextSegment(
                     text=" ".join(current),
                     page_number=segment.page_number,
+                    force_new_chunk=(
+                        segment.force_new_chunk
+                        and not pieces
+                    ),
                 )
             )
 
@@ -230,10 +301,13 @@ def split_long_segment(
             TextSegment(
                 text=" ".join(current),
                 page_number=segment.page_number,
+                force_new_chunk=(
+                    segment.force_new_chunk
+                    and not pieces
+                ),
             )
         )
 
-    # A single sentence can itself exceed MAX_TOKENS.
     final_pieces: list[TextSegment] = []
 
     for piece in pieces:
@@ -261,6 +335,10 @@ def split_long_segment(
                     TextSegment(
                         text=text,
                         page_number=piece.page_number,
+                        force_new_chunk=(
+                            piece.force_new_chunk
+                            and not final_pieces
+                        ),
                     )
                 )
 
@@ -271,10 +349,10 @@ def build_overlap(
     segments: list[TextSegment],
 ) -> list[TextSegment]:
     """
-    Build an overlap from the end of the previous chunk.
+    Build overlap from the end of the previous chunk.
 
-    Whole segments are preferred so we don't create awkward
-    partial sentences or broken algorithm steps.
+    Whole segments are preferred so we don't create broken
+    sentences or partial algorithm steps.
     """
     overlap: list[TextSegment] = []
     overlap_tokens = 0
@@ -300,8 +378,9 @@ def build_chunks(
     TARGET_TOKENS is the preferred size.
     MAX_TOKENS is the hard ceiling.
 
-    We only split when adding the next segment would exceed
-    MAX_TOKENS. This avoids unnecessary tiny chunks.
+    A segment marked force_new_chunk always starts a fresh
+    chunk. This prevents front matter from being merged into
+    actual knowledge content.
     """
     expanded_segments: list[TextSegment] = []
 
@@ -316,6 +395,26 @@ def build_chunks(
     current_tokens = 0
 
     for segment in expanded_segments:
+
+        if segment.force_new_chunk and current_segments:
+            chunks.append(
+                Chunk(
+                    text="\n\n".join(
+                        item.text
+                        for item in current_segments
+                    ),
+                    page_numbers=sorted(
+                        {
+                            item.page_number
+                            for item in current_segments
+                        }
+                    ),
+                )
+            )
+
+            current_segments = []
+            current_tokens = 0
+
         segment_tokens = token_count(segment.text)
 
         if (
