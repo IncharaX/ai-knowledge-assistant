@@ -56,3 +56,22 @@ class ChromaStore:
         Return the number of chunks currently stored.
         """
         return self.collection.count()
+
+    def query(
+        self,
+        *,
+        query_embedding: list[float],
+        top_k: int = 5,
+    ) -> dict:
+        """
+        Search for the most similar document chunks.
+        """
+        return self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k,
+            include=[
+                "documents",
+                "metadatas",
+                "distances",
+        ],
+    )
