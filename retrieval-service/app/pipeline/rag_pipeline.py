@@ -1,36 +1,27 @@
-from app.generation.generator import Generator
+from app.generation.generator import RAGGenerator
 from app.reranking.reranker import CrossEncoderReranker
-from app.retrieval.confidence import RetrievalConfidence
 from app.retrieval.hybrid import HybridRetriever
-
-
-REFUSAL_MESSAGE = (
-    "I don't have enough information in the provided "
-    "knowledge base to answer that reliably."
-)
+from app.retrieval.confidence import RetrievalConfidence
 
 
 class RAGPipeline:
     """
-    Orchestrates the complete RAG pipeline:
+    Complete RAG pipeline.
 
     Hybrid Retrieval
         ↓
     Cross-Encoder Reranking
         ↓
-    Retrieval Confidence Check
+    Confidence Check
         ↓
-    Generate Answer or Refuse
+    Answer Generation
     """
 
     def __init__(self) -> None:
         self.retriever = HybridRetriever()
-
         self.reranker = CrossEncoderReranker()
-
         self.confidence = RetrievalConfidence()
-
-        self.generator = Generator()
+        self.generator = RAGGenerator()
 
     def answer(
         self,
@@ -38,12 +29,6 @@ class RAGPipeline:
         candidate_k: int = 10,
         top_k: int = 5,
     ) -> dict:
-        """
-        Run the complete RAG pipeline.
-
-        Generate an answer only when sufficient
-        retrieval evidence exists.
-        """
 
         # Step 1: Hybrid retrieval
         candidates = self.retriever.search(
@@ -52,22 +37,25 @@ class RAGPipeline:
             candidate_k=candidate_k,
         )
 
-        # Step 2: Cross-encoder reranking
+        # Step 2: Reranking
         reranked_chunks = self.reranker.rerank(
             query=question,
             candidates=candidates,
             top_k=top_k,
         )
 
-        # Step 3: Evaluate retrieval confidence
+        # Step 3: Confidence check
         confidence_result = self.confidence.evaluate(
             reranked_chunks
         )
 
-        # Step 4: Refuse when evidence is insufficient
+        # Step 4: Refuse if evidence is insufficient
         if not confidence_result["is_sufficient"]:
             return {
-                "answer": REFUSAL_MESSAGE,
+                "answer": (
+                    "I don't have enough information in the "
+                    "provided knowledge base to answer that reliably."
+                ),
                 "sources": [],
                 "answered": False,
                 "retrieval_score": confidence_result[
@@ -76,17 +64,9 @@ class RAGPipeline:
             }
 
         # Step 5: Generate grounded answer
-        answer = self.generator.answer(
+        result = self.generator.answer(
             question=question,
             chunks=reranked_chunks,
         )
 
-        # Step 6: Return complete pipeline result
-        return {
-            "answer": answer,
-            "sources": reranked_chunks,
-            "answered": True,
-            "retrieval_score": confidence_result[
-                "top_score"
-            ],
-        }
+        return result

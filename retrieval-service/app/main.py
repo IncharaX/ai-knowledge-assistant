@@ -1,11 +1,34 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+
+from app.pipeline.rag_pipeline import RAGPipeline
+
 
 app = FastAPI(
-    title="AI Knowledge Assistant API",
-    version="0.1.0",
+    title="AI Knowledge Assistant",
+    description="RAG-powered knowledge assistant API",
+    version="1.0.0",
 )
 
 
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
+class QuestionRequest(BaseModel):
+    question: str
+
+
+pipeline = RAGPipeline()
+
+
+@app.get("/")
+def root():
+    return {
+        "message": "AI Knowledge Assistant API is running"
+    }
+
+
+@app.post("/ask")
+def ask_question(request: QuestionRequest):
+    result = pipeline.answer(
+        question=request.question
+    )
+
+    return result
