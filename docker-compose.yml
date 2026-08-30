@@ -3,8 +3,18 @@ services:
     build:
       context: .
       dockerfile: retrieval-service/Dockerfile
-
     container_name: ai-knowledge-retrieval
-
     ports:
       - "8000:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: ai-knowledge-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - retrieval-service
+    environment:
+      RETRIEVAL_SERVICE_URL: http://retrieval-service:8000  
