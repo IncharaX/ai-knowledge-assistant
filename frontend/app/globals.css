@@ -2,26 +2,231 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  margin: 0;
+  min-height: 100%;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  background: #0f172a;
+  color: #e2e8f0;
   font-family: Arial, Helvetica, sans-serif;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+button,
+input {
+  font: inherit;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at top, #1e293b 0%, #0f172a 55%);
+}
+
+.header {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #334155;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.header p {
+  margin: 6px 0 0;
+  color: #94a3b8;
+}
+
+.clear-button {
+  background: transparent;
+  color: #cbd5e1;
+  border: 1px solid #475569;
+  padding: 9px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.clear-button:hover {
+  background: #1e293b;
+}
+
+.chat-container {
+  width: 100%;
+  max-width: 900px;
+  flex: 1;
+  margin: 0 auto;
+  padding: 40px 24px 150px;
+}
+
+.welcome {
+  text-align: center;
+  margin-top: 90px;
+}
+
+.welcome-icon {
+  font-size: 52px;
+}
+
+.welcome h2 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.welcome p {
+  color: #94a3b8;
+}
+
+.suggestions {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.suggestions button {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.suggestions button:hover {
+  background: #334155;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.message {
+  max-width: 85%;
+  padding: 18px;
+  border-radius: 14px;
+}
+
+.message.user {
+  align-self: flex-end;
+  background: #2563eb;
+  color: white;
+}
+
+.message.assistant {
+  align-self: flex-start;
+  background: #1e293b;
+  border: 1px solid #334155;
+}
+
+.message-label {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  opacity: 0.8;
+}
+
+.message-content {
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.sources {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #334155;
+}
+
+.sources h4 {
+  margin: 0 0 10px;
+}
+
+.source {
+  color: #94a3b8;
+  font-size: 14px;
+  margin: 6px 0;
+}
+
+.typing {
+  color: #94a3b8;
+}
+
+.input-area {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, 100%);
+  padding: 20px 24px;
+  display: flex;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid #334155;
+}
+
+.input-area input {
+  flex: 1;
+  background: #1e293b;
+  border: 1px solid #475569;
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  outline: none;
+}
+
+.input-area input:focus {
+  border-color: #3b82f6;
+}
+
+.input-area button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0 22px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.input-area button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .header {
+    padding: 20px;
+  }
+
+  .header h1 {
+    font-size: 20px;
+  }
+
+  .message {
+    max-width: 95%;
+  }
+
+  .welcome {
+    margin-top: 40px;
+  }
+
+  .input-area {
+    padding: 15px;
   }
 }
