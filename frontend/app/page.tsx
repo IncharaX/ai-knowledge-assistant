@@ -62,7 +62,7 @@ export default function Home() {
           sources: data.sources,
         },
       ]);
-    } catch (error) {
+    } catch{
       setMessages((previous) => [
         ...previous,
         {
@@ -110,7 +110,7 @@ export default function Home() {
                   setQuestion("Explain Euclid's algorithm for finding GCD.")
                 }
               >
-                Explain Euclid's algorithm
+                Explain Euclid&apos;s algorithm
               </button>
 
               <button

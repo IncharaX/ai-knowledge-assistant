@@ -1,0 +1,11 @@
+.git
+.gitignore
+
+frontend/node_modules
+frontend/.next
+
+retrieval-service/__pycache__
+retrieval-service/**/__pycache__
+
+.env
+.env.*

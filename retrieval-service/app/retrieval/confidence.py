@@ -10,16 +10,12 @@ class RetrievalConfidence:
     signal, not as a probability.
     """
 
-    CONFIDENCE_THRESHOLD = 0.0
+    CONFIDENCE_THRESHOLD = -5.0
 
     def evaluate(
         self,
         chunks: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        """
-        Evaluate the strongest reranked result and
-        determine whether retrieval evidence is sufficient.
-        """
 
         if not chunks:
             return {

@@ -14,6 +14,7 @@ def main() -> None:
         "Explain graph traversal.",
         "What is quantum entanglement?",
         "How does photosynthesis work?",
+        "What is sequential search?",
     ]
 
     for question in questions:

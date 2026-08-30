@@ -26,9 +26,11 @@ class RAGPipeline:
     def answer(
         self,
         question: str,
-        candidate_k: int = 10,
+        candidate_k: int = 18,
         top_k: int = 5,
     ) -> dict:
+
+        candidate_k: int = 18
 
         # Step 1: Hybrid retrieval
         candidates = self.retriever.search(
