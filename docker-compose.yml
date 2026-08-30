@@ -1,0 +1,10 @@
+services:
+  retrieval-service:
+    build:
+      context: .
+      dockerfile: retrieval-service/Dockerfile
+
+    container_name: ai-knowledge-retrieval
+
+    ports:
+      - "8000:8000"
