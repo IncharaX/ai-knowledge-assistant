@@ -50,9 +50,13 @@ export default function Home() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong");
-      }
+        if (!response.ok) {
+          throw new Error(
+          data.detail ||
+          data.error ||
+         "Something went wrong"
+        );
+        }
 
       setMessages((previous) => [
         ...previous,
@@ -62,13 +66,15 @@ export default function Home() {
           sources: data.sources,
         },
       ]);
-    } catch{
+    } catch(error){
       setMessages((previous) => [
         ...previous,
         {
           role: "assistant",
           content:
-            "Sorry, I couldn't connect to the AI Knowledge Assistant. Please try again.",
+            error instanceof Error
+            ? error.message
+            : "Sorry, something went wrong. Please try again.",
         },
       ]);
     } finally {

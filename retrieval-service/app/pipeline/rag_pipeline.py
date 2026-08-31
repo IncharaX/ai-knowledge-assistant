@@ -30,8 +30,6 @@ class RAGPipeline:
         top_k: int = 5,
     ) -> dict:
 
-        candidate_k: int = 18
-
         # Step 1: Hybrid retrieval
         candidates = self.retriever.search(
             query=question,

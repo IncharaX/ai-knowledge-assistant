@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from app.pipeline.rag_pipeline import RAGPipeline
@@ -25,10 +25,30 @@ def root():
     }
 
 
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy"
+    }
+
+
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
-    result = pipeline.answer(
-        question=request.question
-    )
+    try:
+        result = pipeline.answer(
+            question=request.question
+        )
 
-    return result
+        return result
+
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        )
+
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="An unexpected error occurred.",
+        )
