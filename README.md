@@ -6,6 +6,10 @@ The system uses a hybrid retrieval pipeline combining **semantic search and BM25
 
 ---
 
+## 🖥️ Application Preview
+
+![AI Knowledge Assistant Preview](assets/ai-knowledge-assistant-preview.png)
+
 ## ✨ Features
 
 - 📄 Query PDF-based knowledge sources
