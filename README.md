@@ -4,11 +4,17 @@ A production-oriented **Retrieval-Augmented Generation (RAG)** application that 
 
 The system uses a hybrid retrieval pipeline combining **semantic search and BM25 keyword search**, followed by **cross-encoder reranking** and confidence-based retrieval validation.
 
+## 🚀 Live Demo
+
+🌐 **Try the deployed application:** https://airy-purpose-production-884.up.railway.app
+
 ---
 
 ## 🖥️ Application Preview
 
 ![AI Knowledge Assistant Preview](assets/ai-knowledge-assistant-preview.png)
+
+The application provides an interactive chat interface where users can ask questions about the knowledge base and receive AI-generated answers along with relevant document sources and page numbers.
 
 ## ✨ Features
 
@@ -23,7 +29,10 @@ The system uses a hybrid retrieval pipeline combining **semantic search and BM25
 - 📚 Source citations with document names and page numbers
 - 💬 Interactive chat interface
 - 🐳 Dockerized application using Docker Compose
-
+- 🌐 Live cloud deployment with Railway
+- 🔗 Frontend and backend communication through Railway private networking
+- ⚡ REST API powered by FastAPI
+- 🩺 Health check endpoint for service monitoring
 ---
 
 ## 🏗️ Architecture
@@ -257,7 +266,10 @@ Docker Compose handles communication between both services.
 ✅ Source citations  
 ✅ Next.js chat interface  
 ✅ Dockerized deployment  
-
+✅ Railway cloud deployment  
+✅ Live frontend application  
+✅ Private backend networking  
+✅ Health monitoring  
 ---
 
 ## 🔮 Future Improvements
@@ -270,6 +282,22 @@ Docker Compose handles communication between both services.
 - Multiple knowledge bases
 - Improved citation highlighting
 - Production deployment
+
+---
+---
+
+## 🌐 Deployment
+
+The application is deployed using **Railway** with separate frontend and backend services.
+
+- 🌐 Frontend: Next.js application deployed on Railway
+- ⚙️ Backend: FastAPI retrieval service deployed on Railway
+- 🔗 Communication: Railway private networking between services
+- 🤖 AI: OpenRouter API for LLM-powered answer generation
+
+### 🚀 Live Application
+
+🌐 https://airy-purpose-production-884.up.railway.app
 
 ---
 
