@@ -1,6 +1,11 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 interface Source {
   source: string;
@@ -18,6 +23,14 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
 
   const askQuestion = async (event: FormEvent) => {
     event.preventDefault();
@@ -50,13 +63,13 @@ export default function Home() {
 
       const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(
+      if (!response.ok) {
+        throw new Error(
           data.detail ||
           data.error ||
-         "Something went wrong"
+          "Something went wrong"
         );
-        }
+      }
 
       setMessages((previous) => [
         ...previous,
@@ -66,15 +79,15 @@ export default function Home() {
           sources: data.sources,
         },
       ]);
-    } catch(error){
+    } catch (error) {
       setMessages((previous) => [
         ...previous,
         {
           role: "assistant",
           content:
             error instanceof Error
-            ? error.message
-            : "Sorry, something went wrong. Please try again.",
+              ? error.message
+              : "Sorry, something went wrong. Please try again.",
         },
       ]);
     } finally {
@@ -105,7 +118,9 @@ export default function Home() {
         {messages.length === 0 ? (
           <div className="welcome">
             <div className="welcome-icon">🤖</div>
+
             <h2>How can I help you?</h2>
+
             <p>
               Ask me anything based on the documents in my knowledge base.
             </p>
@@ -121,7 +136,9 @@ export default function Home() {
 
               <button
                 onClick={() =>
-                  setQuestion("What is the efficiency of Euclid's algorithm?")
+                  setQuestion(
+                    "What is the efficiency of Euclid's algorithm?"
+                  )
                 }
               >
                 Explain algorithm efficiency
@@ -136,7 +153,9 @@ export default function Home() {
                 className={`message ${message.role}`}
               >
                 <div className="message-label">
-                  {message.role === "user" ? "You" : "AI Assistant"}
+                  {message.role === "user"
+                    ? "You"
+                    : "AI Assistant"}
                 </div>
 
                 <div className="message-content">
@@ -149,14 +168,20 @@ export default function Home() {
                     <div className="sources">
                       <h4>📚 Sources</h4>
 
-                      {message.sources.map((source, sourceIndex) => (
-                        <div className="source" key={sourceIndex}>
-                          📄 {source.source} — Page{" "}
-                          {source.page_start === source.page_end
-                            ? source.page_start
-                            : `${source.page_start}-${source.page_end}`}
-                        </div>
-                      ))}
+                      {message.sources.map(
+                        (source, sourceIndex) => (
+                          <div
+                            className="source"
+                            key={sourceIndex}
+                          >
+                            📄 {source.source} — Page{" "}
+                            {source.page_start ===
+                            source.page_end
+                              ? source.page_start
+                              : `${source.page_start}-${source.page_end}`}
+                          </div>
+                        )
+                      )}
                     </div>
                   )}
               </div>
@@ -164,12 +189,19 @@ export default function Home() {
 
             {loading && (
               <div className="message assistant">
-                <div className="message-label">AI Assistant</div>
+                <div className="message-label">
+                  AI Assistant
+                </div>
+
                 <div className="typing">
-                  Thinking<span>.</span><span>.</span><span>.</span>
+                  Thinking<span>.</span>
+                  <span>.</span>
+                  <span>.</span>
                 </div>
               </div>
             )}
+
+            <div ref={messagesEndRef} />
           </div>
         )}
       </section>
@@ -179,11 +211,16 @@ export default function Home() {
           type="text"
           placeholder="Ask a question about your knowledge base..."
           value={question}
-          onChange={(event) => setQuestion(event.target.value)}
+          onChange={(event) =>
+            setQuestion(event.target.value)
+          }
           disabled={loading}
         />
 
-        <button type="submit" disabled={loading || !question.trim()}>
+        <button
+          type="submit"
+          disabled={loading || !question.trim()}
+        >
           {loading ? "Thinking..." : "Send"}
         </button>
       </form>
