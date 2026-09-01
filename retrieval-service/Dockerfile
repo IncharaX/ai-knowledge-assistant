@@ -5,13 +5,14 @@ WORKDIR /app/retrieval-service
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-COPY requirements.txt .
+COPY retrieval-service/requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY retrieval-service ./
+COPY data /app/data
 
 EXPOSE 8000
 
