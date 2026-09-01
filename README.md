@@ -169,11 +169,15 @@ cd ai-knowledge-assistant
 
 ### Configure Environment Variables
 
-Create a `.env` file based on `.env.example`:
+Create the environment file for the retrieval service:
 
-```bash
-cp .env.example .env
-```
+cp retrieval-service/.env.example retrieval-service/.env
+
+Open retrieval-service/.env and add your OpenRouter API key:
+
+OPENROUTER_API_KEY=your_actual_openrouter_api_key
+OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct
+
 
 Example:
 
