@@ -4,17 +4,32 @@ services:
       context: .
       dockerfile: retrieval-service/Dockerfile
     container_name: ai-knowledge-retrieval
+    restart: unless-stopped
     ports:
       - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
     container_name: ai-knowledge-frontend
+    restart: unless-stopped
     ports:
       - "3000:3000"
     depends_on:
-      - retrieval-service
+      retrieval-service:
+        condition: service_healthy
     environment:
-      RETRIEVAL_SERVICE_URL: http://retrieval-service:8000  
+      RETRIEVAL_SERVICE_URL: http://retrieval-service:8000
