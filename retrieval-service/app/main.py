@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.pipeline.rag_pipeline import RAGPipeline
 
@@ -12,7 +12,10 @@ app = FastAPI(
 
 
 class QuestionRequest(BaseModel):
-    question: str
+    question: str = Field(
+        min_length=1,
+        max_length=1000,
+    )
 
 
 pipeline = RAGPipeline()
@@ -34,9 +37,17 @@ def health():
 
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty.",
+        )
+
     try:
         result = pipeline.answer(
-            question=request.question
+            question=question
         )
 
         return result
@@ -45,10 +56,4 @@ def ask_question(request: QuestionRequest):
         raise HTTPException(
             status_code=503,
             detail=str(error),
-        )
-
-    except Exception:
-        raise HTTPException(
-            status_code=500,
-            detail="An unexpected error occurred.",
         )
