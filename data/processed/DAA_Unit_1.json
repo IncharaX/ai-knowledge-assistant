@@ -1,0 +1,30 @@
+{
+  "document_id": "DAA_Unit_1",
+  "source": "DAA_Unit_1.pdf",
+  "pages": [
+    {
+      "page_number": 1,
+      "text": "CAMBRIDGE INSTITUTE OF TECHNOLOGY\nAn Autonomous institute\nK R Puram,Bengaluru-560036\nDEPARTMENT OF COMPUTER SCIENCE AND\nENGINEERING\n\nDISCRETE MATHEMATICS AND GRAPH THEORY\n\nPRIM'S ALGORITHM\n\nSubmitted by\nKrishna B Dhamanekar(1CD24CS123)\n4th SEMESTER B SECTION\n\nUnder the guidance Of\nDr.MEGHASHREE G R\nDept of CSE"
+    },
+    {
+      "page_number": 2,
+      "text": "1.Introduction\nPrim's Algorithm is a greedy algorithm used to find the Minimum Spanning Tree (MST) of a\nconnected and weighted graph. A Minimum Spanning Tree is a subset of edges that connects all\nvertices of the graph with the minimum possible total weight and without forming any cycles.\nThe algorithm starts from any vertex and repeatedly selects the minimum-weight edge that connects a\nvisited vertex to an unvisited vertex. This process continues until all vertices are included in the\nspanning tree.\nPrim's Algorithm is widely used in designing communication networks, transportation networks,\nelectrical networks, and other optimization problems.\n\n2. Objectives\n• To understand the concept of Minimum Spanning Tree.\n• To implement Prim's Algorithm using the C programming language.\n• To determine the minimum cost required to connect all vertices of a graph.\n\n3. Key Terms\n• Graph: A collection of vertices and edges.\n• Weighted Graph: A graph in which each edge has a cost or weight.\n• Spanning Tree: A tree that connects all vertices of a graph.\n• Minimum Spanning Tree (MST): A spanning tree having the minimum total edge weight.\n\n4. Algorithm\nAlgorithm: Prim's Algorithm\nInput: Cost matrix of a connected weighted graph having n vertices.\nOutput: Minimum Spanning Tree and its minimum cost.\n\nStep 1:\nStart the algorithm.\nStep 2:\nRead the number of vertices n.\nStep 3:\nRead the cost adjacency matrix of the graph.\nStep 4:\nReplace all diagonal elements and zero values (indicating no edge) with a large value such as 999."
+    },
+    {
+      "page_number": 3,
+      "text": "Step 5:\nInitialize all vertices as unvisited.\nStep 6:\nSelect the first vertex as the starting vertex and mark it as visited.\nStep 7:\nSet the number of edges selected ne = 1.\nStep 8:\nRepeat the following steps until ne < n:\n1. Set min = 999.\n2. Traverse all vertices i and j.\n3. Find the edge having minimum cost such that:\no The starting vertex is already visited.\no The ending vertex is unvisited.\n4. Store the corresponding vertices a and b.\nStep 9:\nIf either vertex of the selected edge is unvisited:\n• Add the edge to the Minimum Spanning Tree.\n• Display the selected edge and its cost.\n• Add the edge cost to the total minimum cost.\n• Mark the new vertex as visited.\n• Increment the edge count.\nStep 10:\nRemove the selected edge from further consideration by assigning a large value (999) to it.\nStep 11:\nRepeat the process until n − 1 edges are selected.\nStep 12:\nDisplay the total minimum cost of the Minimum Spanning Tree.\nStep 13:\nStop the algorithm.\n\n5. Java Program for Prim's Algorithm\nimport java.util.Scanner;\n\npublic class PrimsAlgorithm {\npublic static void main(String[] args) {\nint[][] cost = new int[10][10];"
+    },
+    {
+      "page_number": 4,
+      "text": "int[] visited = new int[10];\n\nint n, ne = 1;\nint min, a = 0, b = 0, u = 0, v = 0;\nint mincost = 0;\n\nScanner sc = new Scanner(System.in);\n\nSystem.out.print(\"Enter the number of vertices: \");\nn = sc.nextInt();\n\nSystem.out.println(\"Enter the cost matrix:\");\n\nfor (int i = 1; i <= n; i++) {\nfor (int j = 1; j <= n; j++) {\ncost[i][j] = sc.nextInt();\n\nif (cost[i][j] == 0)\ncost[i][j] = 999;\n}\n}\n\nvisited[1] = 1;\n\nwhile (ne < n) {\nmin = 999;\n\nfor (int i = 1; i <= n; i++) {\nfor (int j = 1; j <= n; j++) {\nif (cost[i][j] < min) {\nif (visited[i] != 0) {\nmin = cost[i][j];\na = u = i;\nb = v = j;\n}\n}\n}"
+    },
+    {
+      "page_number": 5,
+      "text": "}\n\nif (visited[u] == 0 || visited[v] == 0) {\nSystem.out.println(\n\"Edge \" + ne + \": (\" + a + \",\" + b + \") Cost = \" + min\n);\n\nmincost += min;\nvisited[b] = 1;\nne++;\n}\n\ncost[a][b] = cost[b][a] = 999;\n}\n\nSystem.out.println(\"Minimum Cost = \" + mincost);\n\nsc.close();\n}\n}\n\n6. Input Graph :-"
+    },
+    {
+      "page_number": 6,
+      "text": "7. Output :-\n\n8. Time Complexity\n• The algorithm scans the entire cost matrix repeatedly.\n• There are n − 1 iterations.\n• In each iteration, all n × n elements are checked.\nTherefore,\n𝑇(𝑛) = 𝑂(𝑛2)\n\n9. Space Complexity\n• Cost matrix: O(n²)\n• Visited array: O(n)\nOverall Space Complexity:\n𝑂(𝑛2)"
+    }
+  ]
+}
