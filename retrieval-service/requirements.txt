@@ -17,4 +17,5 @@ pymupdf
 python-multipart
 
 pytest
-pytest-asynciotiktoken
+pytest-asyncio
+tiktoken
