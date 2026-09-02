@@ -347,29 +347,29 @@ The application is deployed on **Railway** using separate frontend and backend s
 
 ---
 
-# 🎯 Current Capabilities
+## 🎯 Current Capabilities
 
-✅ Dynamic PDF upload
-✅ PDF text extraction
-✅ Document chunking
-✅ Vector embeddings
-✅ ChromaDB vector storage
-✅ Semantic retrieval
-✅ BM25 keyword retrieval
-✅ Hybrid search
-✅ Reciprocal Rank Fusion
-✅ Cross-encoder reranking
-✅ Retrieval confidence validation
-✅ Grounded LLM generation
-✅ Hallucination/refusal handling
-✅ Source citations
-✅ Page number citations
-✅ Interactive chat interface
-✅ Copy answer functionality
-✅ Clear chat functionality
-✅ Dockerized application
-✅ Railway cloud deployment
-✅ Production-tested PDF RAG pipeline
+- ✅ Dynamic PDF upload
+- ✅ PDF text extraction
+- ✅ Document chunking
+- ✅ Vector embeddings
+- ✅ ChromaDB vector storage
+- ✅ Semantic retrieval
+- ✅ BM25 keyword retrieval
+- ✅ Hybrid search
+- ✅ Reciprocal Rank Fusion
+- ✅ Cross-encoder reranking
+- ✅ Retrieval confidence validation
+- ✅ Grounded LLM generation
+- ✅ Hallucination/refusal handling
+- ✅ Source citations
+- ✅ Page number citations
+- ✅ Interactive chat interface
+- ✅ Copy answer functionality
+- ✅ Clear chat functionality
+- ✅ Dockerized application
+- ✅ Railway cloud deployment
+- ✅ Production-tested PDF RAG pipeline
 
 ---
 
