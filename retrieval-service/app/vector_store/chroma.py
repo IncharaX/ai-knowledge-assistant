@@ -15,7 +15,10 @@ class ChromaStore:
     Persistent vector store for document chunks.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        collection_name: str = COLLECTION_NAME,
+    ) -> None:
         CHROMA_PATH.mkdir(
             parents=True,
             exist_ok=True,
@@ -27,7 +30,7 @@ class ChromaStore:
 
         self.collection = (
             self.client.get_or_create_collection(
-                name=COLLECTION_NAME,
+                name=collection_name,
             )
         )
 

@@ -37,8 +37,15 @@ class BM25Retriever:
     Keyword-based document retriever using BM25.
     """
 
-    def __init__(self) -> None:
-        self.chunks = self._load_chunks()
+    def __init__(
+        self,
+        chunks: list[dict[str, Any]] | None = None,
+    ) -> None:
+        self.chunks = (
+            chunks
+            if chunks is not None
+            else self._load_chunks()
+        )
 
         if not self.chunks:
             raise ValueError(
