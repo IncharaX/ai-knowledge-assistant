@@ -223,7 +223,7 @@ If relevant information cannot be retrieved, the system responds appropriately i
 ### Clone the repository
 
 ```bash
-git clone <your-repository-url>
+git clone <https://github.com/IncharaX/ai-knowledge-assistant>
 cd ai-knowledge-assistant
 ```
 
