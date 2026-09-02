@@ -1,3 +1,5 @@
+from unittest import result
+
 from app.generation.generator import RAGGenerator
 from app.reranking.reranker import CrossEncoderReranker
 from app.retrieval.hybrid import HybridRetriever
@@ -68,5 +70,9 @@ class RAGPipeline:
             question=question,
             chunks=reranked_chunks,
         )
+
+        result["retrieval_score"] = confidence_result[
+             "top_score"
+        ]
 
         return result
