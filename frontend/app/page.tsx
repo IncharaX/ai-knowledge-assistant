@@ -12,6 +12,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
+  retrieval_score?: number | null;
 }
 
 function groupSources(sources: Source[]) {
@@ -36,6 +37,23 @@ function groupSources(sources: Source[]) {
     source,
     pages,
   }));
+}
+
+function getConfidenceLabel(
+  score: number | null | undefined,
+  hasSources: boolean,
+) {
+  if (!hasSources || score === null || score === undefined) {
+    return {
+      label: "Not enough information",
+      className: "confidence-low",
+    };
+  }
+
+  return {
+    label: "Grounded answer",
+    className: "confidence-high",
+  };
 }
 
 export default function Home() {
@@ -142,6 +160,7 @@ export default function Home() {
           role: "assistant",
           content: data.answer,
           sources: data.sources,
+          retrieval_score: data.retrieval_score,
         },
       ]);
     } catch (error) {
@@ -274,6 +293,25 @@ export default function Home() {
                 <div className="message-label">
                   {message.role === "user" ? "You" : "AI Assistant"}
                 </div>
+
+                {message.role === "assistant" &&
+                  (() => {
+                    const confidence = getConfidenceLabel(
+                      message.retrieval_score,
+                      Boolean(message.sources?.length),
+                    );
+
+                    return (
+                      <div
+                        className={`confidence-badge ${confidence.className}`}
+                      >
+                        {confidence.className === "confidence-high"
+                          ? "🟢"
+                          : "🔴"}{" "}
+                        {confidence.label}
+                      </div>
+                    );
+                  })()}
 
                 <div className="message-content">{message.content}</div>
 

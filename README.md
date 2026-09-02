@@ -1,12 +1,30 @@
 # 🤖 AI Knowledge Assistant
 
-A production-oriented **Retrieval-Augmented Generation (RAG)** application that allows users to ask questions about their knowledge base and receive AI-generated answers backed by relevant document sources.
+A production-oriented **Retrieval-Augmented Generation (RAG)** application that allows users to ask questions about a knowledge base or dynamically uploaded PDF documents.
 
-The system uses a hybrid retrieval pipeline combining **semantic search and BM25 keyword search**, followed by **cross-encoder reranking** and confidence-based retrieval validation.
+The system combines **semantic search**, **BM25 keyword retrieval**, **Reciprocal Rank Fusion (RRF)**, **cross-encoder reranking**, and **retrieval confidence validation** to generate grounded answers backed by document sources.
 
-## 🚀 Live Demo
+---
 
-🌐 **Try the deployed application:** https://airy-purpose-production-884.up.railway.app
+## ✨ Features
+
+- 📄 Upload and ask questions about PDF documents
+- 🧠 Retrieval-Augmented Generation (RAG)
+- 🔍 Semantic vector search using embeddings
+- 🔎 BM25 keyword search
+- 🔀 Hybrid retrieval using Reciprocal Rank Fusion (RRF)
+- 🎯 Cross-encoder reranking for improved relevance
+- 🛡️ Confidence-based retrieval validation
+- 🤖 AI-generated answers grounded in retrieved context
+- 📚 Source citations with document names and page numbers
+- 🗂️ Grouped document sources for a cleaner UI
+- 📋 Copy AI answers with visual feedback
+- 🟢 Grounded answer indicators
+- 🔴 Insufficient-information detection
+- 💬 Interactive chat interface
+- ⚡ REST API powered by FastAPI
+- 🩺 Health check endpoint
+- 🐳 Dockerized application using Docker Compose
 
 ---
 
@@ -14,126 +32,189 @@ The system uses a hybrid retrieval pipeline combining **semantic search and BM25
 
 ![AI Knowledge Assistant Preview](assets/ai-knowledge-assistant-preview.png)
 
-The application provides an interactive chat interface where users can ask questions about the knowledge base and receive AI-generated answers along with relevant document sources and page numbers.
+The application provides an interactive chat interface where users can:
 
-## ✨ Features
+- Ask questions about the knowledge base
+- Upload a PDF and ask questions specifically about that document
+- View grounded answers with source citations
+- See whether sufficient retrieval evidence was found
+- Copy generated answers
 
-- 📄 Query PDF-based knowledge sources
-- 🧠 Retrieval-Augmented Generation (RAG)
-- 🔍 Semantic vector search using embeddings
-- 🔎 BM25 keyword search
-- 🔀 Hybrid retrieval using Reciprocal Rank Fusion (RRF)
-- 🎯 Cross-encoder reranking for better relevance
-- 📊 Confidence-based retrieval validation
-- 🤖 AI-generated answers based on retrieved context
-- 📚 Source citations with document names and page numbers
-- 💬 Interactive chat interface
-- 🐳 Dockerized application using Docker Compose
-- 🌐 Live cloud deployment with Railway
-- 🔗 Frontend and backend communication through Railway private networking
-- ⚡ REST API powered by FastAPI
-- 🩺 Health check endpoint for service monitoring
 ---
 
-## 🏗️ Architecture
+# 🏗️ Architecture
 
 ```text
-                ┌──────────────────┐
-                │     Next.js      │
-                │    Frontend      │
-                └────────┬─────────┘
-                         │
-                         │ Question
-                         ▼
-                ┌──────────────────┐
-                │     FastAPI      │
-                │ Retrieval Service│
-                └────────┬─────────┘
-                         │
-                         ▼
-          ┌─────────────────────────────┐
-          │      Hybrid Retrieval       │
-          │                             │
-          │  Semantic Search + BM25     │
-          └──────────────┬──────────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │   RRF Fusion     │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │ Cross-Encoder    │
-                │   Reranking      │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │   Confidence     │
-                │    Validation    │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │       LLM        │
-                │    Generation    │
-                └──────────────────┘
+                         ┌──────────────────┐
+                         │     Next.js      │
+                         │    Frontend      │
+                         └────────┬─────────┘
+                                  │
+                    ┌─────────────┴─────────────┐
+                    │                           │
+                    ▼                           ▼
+             Ask Question                  Upload PDF
+                    │                           │
+                    ▼                           ▼
+          ┌──────────────────┐       ┌──────────────────┐
+          │     FastAPI      │       │ PDF Processing   │
+          │ Retrieval Service│       │ + Chunking       │
+          └────────┬─────────┘       └────────┬─────────┘
+                   │                          │
+                   │                          ▼
+                   │                 ┌──────────────────┐
+                   │                 │   Embeddings     │
+                   │                 │    + ChromaDB    │
+                   │                 └────────┬─────────┘
+                   │                          │
+                   └──────────────┬───────────┘
+                                  ▼
+                    ┌─────────────────────────┐
+                    │    Hybrid Retrieval     │
+                    │                         │
+                    │ Semantic Search + BM25  │
+                    └────────────┬────────────┘
+                                 │
+                                 ▼
+                       ┌──────────────────┐
+                       │   RRF Fusion     │
+                       └────────┬─────────┘
+                                │
+                                ▼
+                       ┌──────────────────┐
+                       │ Cross-Encoder    │
+                       │   Reranking      │
+                       └────────┬─────────┘
+                                │
+                                ▼
+                       ┌──────────────────┐
+                       │   Confidence     │
+                       │    Validation    │
+                       └────────┬─────────┘
+                                │
+                     ┌──────────┴──────────┐
+                     │                     │
+                     ▼                     ▼
+              Enough Evidence        Insufficient Evidence
+                     │                     │
+                     ▼                     ▼
+              LLM Generation         Safe Refusal
+                     │
+                     ▼
+              Answer + Sources
+````
+
+---
+
+# 🔄 Retrieval Pipeline
+
+When a user asks a question, the system follows this process:
+
+1. The user submits a question through the Next.js chat interface.
+2. The request is sent to the FastAPI retrieval service.
+3. The system performs **semantic vector search** using embeddings and ChromaDB.
+4. **BM25 keyword search** retrieves keyword-relevant chunks.
+5. Results are combined using **Reciprocal Rank Fusion (RRF)**.
+6. A **cross-encoder reranker** ranks the retrieved chunks by relevance.
+7. A **confidence check** determines whether sufficient evidence exists.
+8. If sufficient evidence is found, relevant context is sent to the LLM.
+9. The LLM generates an answer grounded in the retrieved documents.
+10. The frontend displays the answer with document sources and page numbers.
+
+If sufficient evidence is not found, the assistant returns a safe response instead of generating an unsupported answer.
+
+---
+
+# 📄 Uploaded Document Pipeline
+
+Users can also upload a PDF directly through the UI.
+
+The uploaded document follows this flow:
+
+```text
+PDF Upload
+    ↓
+Text Extraction
+    ↓
+Document Chunking
+    ↓
+Quality Filtering
+    ↓
+Embedding Generation
+    ↓
+Separate ChromaDB Collection
+    +
+BM25 Index
+    ↓
+Hybrid Retrieval
+    ↓
+Reranking
+    ↓
+Confidence Validation
+    ↓
+Grounded Answer
 ```
 
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-
-- Next.js 14
-- React
-- TypeScript
-- CSS
-
-### Backend
-
-- FastAPI
-- Python
-
-### Retrieval & AI
-
-- ChromaDB
-- Sentence Transformers
-- BM25
-- Cross-Encoder Reranking
-- Hybrid Retrieval
-- Reciprocal Rank Fusion (RRF)
-
-### Infrastructure
-
-- Docker
-- Docker Compose
+Each uploaded document receives its own vector collection, allowing questions to be answered specifically from that document.
 
 ---
 
-## 📂 Project Structure
+# 🛠️ Tech Stack
+
+## Frontend
+
+* Next.js 14
+* React
+* TypeScript
+* CSS
+
+## Backend
+
+* FastAPI
+* Python
+* Pydantic
+
+## Retrieval & AI
+
+* ChromaDB
+* Sentence Transformers
+* BM25
+* Cross-Encoder Reranking
+* Hybrid Retrieval
+* Reciprocal Rank Fusion (RRF)
+* OpenRouter LLM API
+
+## Infrastructure
+
+* Docker
+* Docker Compose
+
+---
+
+# 📂 Project Structure
 
 ```text
 ai-knowledge-assistant/
 │
-├── frontend/                  # Next.js frontend
-│
-├── retrieval-service/         # FastAPI retrieval service
+├── frontend/                     # Next.js frontend
 │   ├── app/
-│   │   ├── chunking/
-│   │   ├── embeddings/
-│   │   ├── keyword_search/
-│   │   ├── pipeline/
-│   │   ├── reranking/
-│   │   ├── retrieval/
-│   │   └── vector_store/
+│   │   ├── api/
+│   │   ├── globals.css
+│   │   └── page.tsx
 │
-├── data/
-│   ├── documents/             # Source PDFs
-│   └── processed/             # Processed document data
+├── retrieval-service/            # FastAPI backend
+│   └── app/
+│       ├── embeddings/           # Embedding model
+│       ├── generation/           # LLM generation
+│       ├── indexing/             # Index quality checks
+│       ├── ingestion/            # PDF extraction and chunking
+│       ├── keyword_search/       # BM25 retrieval
+│       ├── pipeline/             # RAG pipelines
+│       ├── reranking/            # Cross-encoder reranking
+│       ├── retrieval/            # Retrieval and confidence logic
+│       └── vector_store/         # ChromaDB integration
 │
+├── data/                         # Knowledge base documents
 ├── config/
 ├── eval/
 │
@@ -143,58 +224,50 @@ ai-knowledge-assistant/
 
 ---
 
-## 🔄 Retrieval Pipeline
+# 🚀 Running the Project
 
-When a user asks a question, the system follows this process:
-
-1. **User submits a question** through the Next.js chat interface.
-2. The question is sent to the **FastAPI retrieval service**.
-3. The system performs **semantic vector search** using ChromaDB.
-4. **BM25 keyword search** retrieves keyword-relevant chunks.
-5. Results are combined using **Reciprocal Rank Fusion (RRF)**.
-6. A **cross-encoder reranker** ranks the retrieved chunks by relevance.
-7. A **confidence check** determines whether sufficient evidence exists.
-8. If sufficient evidence is found, relevant context is passed to the LLM.
-9. The system generates an answer grounded in the retrieved documents.
-10. The frontend displays the answer along with its **document sources and page numbers**.
-
----
-
-## 🚀 Running the Project
-
-### Prerequisites
+## Prerequisites
 
 Make sure you have installed:
 
-- Docker
-- Docker Compose
+* Docker
+* Docker Compose
 
-### Clone the Repository
+---
+
+## Clone the Repository
 
 ```bash
 git clone <your-repository-url>
 cd ai-knowledge-assistant
 ```
 
-### Configure Environment Variables
+---
+
+## Configure Environment Variables
 
 Create the environment file for the retrieval service:
 
+```bash
 cp retrieval-service/.env.example retrieval-service/.env
+```
 
-Open retrieval-service/.env and add your OpenRouter API key:
+Add your OpenRouter API credentials:
 
-OPENROUTER_API_KEY=your_actual_openrouter_api_key
+```env
+OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct
+```
 
-
-Example:
+Configure the frontend environment if required:
 
 ```env
 RETRIEVAL_SERVICE_URL=http://localhost:8000
 ```
 
-### Start the Application
+---
+
+## Start the Application
 
 ```bash
 docker compose up --build
@@ -202,102 +275,106 @@ docker compose up --build
 
 Once running:
 
-- Frontend: `http://localhost:3000`
-- Retrieval API: `http://localhost:8000`
+* Frontend: `http://localhost:3000`
+* Retrieval API: `http://localhost:8000`
+* API Docs: `http://localhost:8000/docs`
 
 ---
 
-## 💬 Example Questions
+# 💬 Example Questions
 
 You can ask questions such as:
 
-- What is sequential search?
-- Explain Euclid's algorithm for finding GCD.
-- What is Big O notation?
-- What are the types of algorithms?
-- Explain bubble sort.
+* What is sequential search?
+* Explain Euclid's algorithm for finding GCD.
+* What is Big O notation?
+* What are the types of algorithms?
+* Explain bubble sort.
 
-The system retrieves relevant information from the knowledge base before generating an answer.
-
----
-
-## 📚 Source Grounding
-
-The assistant is designed to answer questions using information retrieved from the provided knowledge base.
-
-If the system cannot find sufficiently relevant information, it can refuse to provide an unsupported answer rather than hallucinating information.
-
-This behavior is controlled using retrieval confidence validation after reranking.
+You can also upload a PDF and ask questions specifically about its contents.
 
 ---
 
-## 🐳 Docker Services
+# 🛡️ Source Grounding and Confidence Validation
 
-The application consists of two services:
+The assistant is designed to generate answers based on retrieved document evidence.
 
-### Frontend
+After retrieval and reranking, the system evaluates whether the retrieved chunks provide sufficient evidence.
 
-- Next.js application
-- Runs on port `3000`
+### 🟢 Grounded Answer
 
-### Retrieval Service
+When relevant evidence is available, the assistant generates an answer and displays the supporting sources.
 
-- FastAPI application
-- Handles retrieval, reranking, confidence validation, and answer generation
-- Runs on port `8000`
+### 🔴 Not Enough Information
 
-Docker Compose handles communication between both services.
+When the retrieval evidence is insufficient, the system avoids generating an unsupported answer.
+
+This helps reduce hallucinations and makes the system's behavior more transparent.
+
+---
+
+# 🐳 Docker Services
+
+The application consists of two main services.
+
+## Frontend
+
+* Next.js application
+* Interactive chat interface
+* PDF upload interface
+* Runs on port `3000`
+
+## Retrieval Service
+
+* FastAPI application
+* Handles PDF processing
+* Semantic retrieval
+* BM25 retrieval
+* Hybrid search
+* Reranking
+* Confidence validation
+* LLM answer generation
+* Runs on port `8000`
+
+Docker Compose manages communication between the services.
 
 ---
 
-## 🎯 Current Capabilities
+# 🎯 Current Capabilities
 
-✅ PDF document processing  
-✅ Document chunking  
-✅ Vector embeddings  
-✅ ChromaDB vector storage  
-✅ Semantic retrieval  
-✅ BM25 keyword retrieval  
-✅ Hybrid search  
-✅ Reciprocal Rank Fusion  
-✅ Cross-encoder reranking  
-✅ Retrieval confidence validation  
-✅ LLM answer generation  
-✅ Source citations  
-✅ Next.js chat interface  
-✅ Dockerized deployment  
-✅ Railway cloud deployment  
-✅ Live frontend application  
-✅ Private backend networking  
-✅ Health monitoring  
----
-
-## 🔮 Future Improvements
-
-- Support uploading documents through the UI
-- Conversation memory
-- Streaming responses
-- Evaluation metrics for retrieval quality
-- Authentication and user accounts
-- Multiple knowledge bases
-- Improved citation highlighting
-- Production deployment
+* ✅ PDF document processing
+* ✅ Dynamic PDF uploads
+* ✅ Document chunking
+* ✅ Vector embeddings
+* ✅ ChromaDB vector storage
+* ✅ Semantic retrieval
+* ✅ BM25 keyword retrieval
+* ✅ Hybrid search
+* ✅ Reciprocal Rank Fusion
+* ✅ Cross-encoder reranking
+* ✅ Retrieval confidence validation
+* ✅ Grounded answer generation
+* ✅ Safe refusal for insufficient evidence
+* ✅ Source citations
+* ✅ Original PDF filename preservation
+* ✅ Grouped document sources
+* ✅ Copy answer functionality
+* ✅ Interactive Next.js chat interface
+* ✅ FastAPI REST API
+* ✅ Dockerized application
 
 ---
----
 
-## 🌐 Deployment
+# 🔮 Future Improvements
 
-The application is deployed using **Railway** with separate frontend and backend services.
-
-- 🌐 Frontend: Next.js application deployed on Railway
-- ⚙️ Backend: FastAPI retrieval service deployed on Railway
-- 🔗 Communication: Railway private networking between services
-- 🤖 AI: OpenRouter API for LLM-powered answer generation
-
-### 🚀 Live Application
-
-🌐 https://airy-purpose-production-884.up.railway.app
+* Conversation memory
+* Streaming responses
+* Support for multiple uploaded documents
+* Retrieval evaluation metrics
+* Authentication and user accounts
+* Persistent user knowledge bases
+* Improved citation highlighting
+* Support for additional document formats
 
 ---
 
@@ -308,3 +385,7 @@ The application is deployed using **Railway** with separate frontend and backend
 ---
 
 ⭐ If you found this project interesting, consider giving the repository a star!
+
+````
+
+
