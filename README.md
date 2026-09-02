@@ -10,7 +10,7 @@ The system combines **semantic search**, **BM25 keyword search**, **Reciprocal R
 
 🌐 **Try the application:**
 
-https://airy-purpose-production-884.up.railway.app
+https://airy-purpose-production-8884.up.railway.app/
 
 ---
 
