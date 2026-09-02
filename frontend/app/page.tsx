@@ -146,14 +146,44 @@ export default function Home() {
         <div>
           <h1>AI Knowledge Assistant</h1>
 
-          <p>
-            {uploadedDocument
-              ? `Currently using: ${uploadedDocument}`
-              : "Upload a PDF and ask questions about it"}
-          </p>
+          {uploadedDocument ? (
+            <div className="document-status">
+              <div className="document-status-icon">📄</div>
 
-          <label className="upload-button">
-            {uploading ? "Processing PDF..." : "📄 Upload PDF"}
+              <div className="document-status-info">
+                <span className="document-status-label">ACTIVE DOCUMENT</span>
+
+                <span className="document-status-name">{uploadedDocument}</span>
+              </div>
+
+              <div className="document-status-dot" />
+            </div>
+          ) : (
+            <p>Upload a PDF and ask questions about it</p>
+          )}
+
+          <label className="upload-card">
+            <div className="upload-icon">{uploading ? "⏳" : "📄"}</div>
+
+            <div className="upload-content">
+              <span className="upload-title">
+                {uploading
+                  ? "Processing your document..."
+                  : uploadedDocument
+                    ? "Upload another PDF"
+                    : "Upload a PDF"}
+              </span>
+
+              <span className="upload-subtitle">
+                {uploading
+                  ? "Preparing your document for AI search"
+                  : "Add a document to your knowledge base"}
+              </span>
+            </div>
+
+            <div className="upload-action">
+              {uploading ? "Processing" : "Browse"}
+            </div>
 
             <input
               type="file"
