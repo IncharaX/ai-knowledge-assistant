@@ -898,6 +898,24 @@ button {
   }
 }
 
+.copy-button {
+  margin-top: 14px;
+  padding: 7px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+  color: #ffffff;
+  border-color: rgba(96, 165, 250, 0.6);
+  background: rgba(59, 130, 246, 0.1);
+}
+
 /* =========================
    MOBILE
 ========================= */

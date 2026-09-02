@@ -148,6 +148,7 @@ async def upload_pdf(
 
         result = process_uploaded_pdf(
             pdf_path=file_path,
+            original_filename=file.filename,
             embedding_model=embedding_model,
         )
 

@@ -10,6 +10,7 @@ from app.vector_store.chroma import ChromaStore
 
 def process_uploaded_pdf(
     pdf_path: Path,
+    original_filename: str,
     embedding_model: EmbeddingModel,
 ) -> dict:
     """
@@ -44,7 +45,7 @@ def process_uploaded_pdf(
 
         metadata = {
             "document_id": document_id,
-            "source": pdf_path.name,
+            "source": original_filename,
             "page_start": min(chunk.page_numbers),
             "page_end": max(chunk.page_numbers),
         }
@@ -82,7 +83,7 @@ def process_uploaded_pdf(
     return {
         "document_id": document_id,
         "collection_name": collection_name,
-        "source": pdf_path.name,
+        "source": original_filename,
         "chunk_count": len(texts),
         "bm25_chunks": bm25_chunks,
     }

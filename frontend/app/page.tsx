@@ -14,11 +14,35 @@ interface Message {
   sources?: Source[];
 }
 
+function groupSources(sources: Source[]) {
+  const grouped = new Map<string, string[]>();
+
+  sources.forEach((source) => {
+    const pageRange =
+      source.page_start === source.page_end
+        ? `${source.page_start}`
+        : `${source.page_start}-${source.page_end}`;
+
+    const existingPages = grouped.get(source.source) || [];
+
+    if (!existingPages.includes(pageRange)) {
+      existingPages.push(pageRange);
+    }
+
+    grouped.set(source.source, existingPages);
+  });
+
+  return Array.from(grouped.entries()).map(([source, pages]) => ({
+    source,
+    pages,
+  }));
+}
+
 export default function Home() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [uploadedDocument, setUploadedDocument] = useState<string | null>(null);
@@ -136,6 +160,20 @@ export default function Home() {
     }
   };
 
+  const copyAnswer = async (content: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(content);
+
+      setCopiedIndex(index);
+
+      setTimeout(() => {
+        setCopiedIndex(null);
+      }, 2000);
+    } catch {
+      alert("Unable to copy the answer.");
+    }
+  };
+
   const clearChat = () => {
     setMessages([]);
   };
@@ -239,18 +277,28 @@ export default function Home() {
 
                 <div className="message-content">{message.content}</div>
 
+                {message.role === "assistant" && (
+                  <button
+                    className="copy-button"
+                    onClick={() => copyAnswer(message.content, index)}
+                  >
+                    {copiedIndex === index ? "✅ Copied!" : "📋 Copy"}
+                  </button>
+                )}
+
                 {message.role === "assistant" &&
                   message.sources &&
                   message.sources.length > 0 && (
                     <div className="sources">
                       <h4>📚 Sources</h4>
 
-                      {message.sources.map((source, sourceIndex) => (
-                        <div className="source" key={sourceIndex}>
-                          📄 {source.source} — Page{" "}
-                          {source.page_start === source.page_end
-                            ? source.page_start
-                            : `${source.page_start}-${source.page_end}`}
+                      {groupSources(message.sources).map((source) => (
+                        <div className="source" key={source.source}>
+                          <div>📄 {source.source}</div>
+
+                          <div className="source-pages">
+                            Pages: {source.pages.join(", ")}
+                          </div>
                         </div>
                       ))}
                     </div>

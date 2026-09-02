@@ -1,3 +1,5 @@
+from unittest import result
+
 from app.embeddings.model import EmbeddingModel
 from app.generation.generator import RAGGenerator
 from app.keyword_search.bm25 import BM25Retriever
@@ -114,10 +116,14 @@ class UploadedDocumentPipeline:
             }
 
         # Generate grounded answer
-        return self.generator.answer(
+        result = self.generator.answer(
             question=question,
             chunks=reranked_chunks,
         )
+
+        result["retrieval_score"] = confidence_result["top_score"]
+
+        return result
 
     def _add_results(
         self,
