@@ -8,9 +8,24 @@ class SemanticRetriever:
     from the vector database.
     """
 
-    def __init__(self) -> None:
-        self.embedding_model = EmbeddingModel()
-        self.vector_store = ChromaStore()
+    def __init__(
+        self,
+        embedding_model: EmbeddingModel | None = None,
+        collection_name: str | None = None,
+    ) -> None:
+
+        self.embedding_model = (
+            embedding_model
+            if embedding_model is not None
+            else EmbeddingModel()
+        )
+
+        if collection_name is not None:
+            self.vector_store = ChromaStore(
+                collection_name=collection_name
+            )
+        else:
+            self.vector_store = ChromaStore()
 
     def search(
         self,

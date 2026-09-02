@@ -14,5 +14,7 @@ python-dotenv
 
 pymupdf
 
+python-multipart
+
 pytest
 pytest-asyncio
