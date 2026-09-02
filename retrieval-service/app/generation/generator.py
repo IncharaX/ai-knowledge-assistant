@@ -6,7 +6,6 @@ from app.generation.prompt import build_rag_prompt
 
 
 class RAGGenerator:
-
     """
     Generates grounded answers from
     already retrieved chunks.

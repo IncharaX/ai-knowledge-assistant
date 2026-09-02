@@ -1,58 +1,76 @@
 from app.generation.generator import RAGGenerator
+from app.reranking.reranker import CrossEncoderReranker
+from app.retrieval.hybrid import HybridRetriever
 
 
 def main() -> None:
+    retriever = HybridRetriever()
+    reranker = CrossEncoderReranker()
     generator = RAGGenerator()
 
-    questions = [
-        "Explain Euclid's algorithm for finding GCD.",
-        "What is quantum entanglement?",
-    ]
+    question = (
+        "Explain Euclid's algorithm "
+        "for finding GCD."
+    )
 
-    for question in questions:
+    print("\n" + "=" * 80)
+    print("QUESTION")
+    print("=" * 80)
 
-        print("\n" + "=" * 80)
-        print("QUESTION")
-        print("=" * 80)
+    print(question)
 
-        print(question)
+    print("\nRetrieving candidates...")
 
-        print("\n" + "=" * 80)
-        print("GENERATING ANSWER...")
-        print("=" * 80)
+    candidates = retriever.search(
+        query=question,
+        top_k=10,
+        candidate_k=10,
+    )
 
-        result = generator.answer(
-            question=question
+    print(
+        f"Retrieved {len(candidates)} candidates."
+    )
+
+    print("\nReranking candidates...")
+
+    chunks = reranker.rerank(
+        query=question,
+        candidates=candidates,
+        top_k=5,
+    )
+
+    print(
+        f"Using {len(chunks)} chunks for generation."
+    )
+
+    print("\nGenerating answer...")
+
+    result = generator.answer(
+        question=question,
+        chunks=chunks,
+    )
+
+    print("\n" + "=" * 80)
+    print("ANSWER")
+    print("=" * 80)
+
+    print(result["answer"])
+
+    print("\n" + "=" * 80)
+    print("SOURCES")
+    print("=" * 80)
+
+    for index, source in enumerate(
+        result["sources"],
+        start=1,
+    ):
+        print(
+            f"\n[{index}] "
+            f"{source['source']} "
+            f"(Pages "
+            f"{source['page_start']}-"
+            f"{source['page_end']})"
         )
-
-        print("\nANSWER:\n")
-        print(result["answer"])
-
-        print("\nANSWERED:")
-        print(result["answered"])
-
-        print("\nRETRIEVAL SCORE:")
-        print(result["retrieval_score"])
-
-        print("\n" + "=" * 80)
-        print("SOURCES")
-        print("=" * 80)
-
-        if not result["sources"]:
-            print("No sources returned.")
-
-        else:
-            for index, source in enumerate(
-                result["sources"],
-                start=1,
-            ):
-                print(
-                    f"\n[{index}] "
-                    f"{source['source']} "
-                    f"(Pages "
-                    f"{source['page_start']}-"
-                    f"{source['page_end']})"
-                )
 
 
 if __name__ == "__main__":
