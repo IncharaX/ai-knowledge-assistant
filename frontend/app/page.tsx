@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  FormEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 interface Source {
   source: string;
@@ -26,11 +21,59 @@ export default function Home() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const [uploadedDocument, setUploadedDocument] = useState<string | null>(null);
+
+  const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: "smooth",
     });
   }, [messages, loading]);
+
+  const uploadPDF = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      alert("Please select a PDF file.");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Unable to upload the PDF.");
+      }
+
+      setUploadedDocument(data.source);
+
+      setMessages([]);
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while uploading.",
+      );
+    } finally {
+      setUploading(false);
+
+      event.target.value = "";
+    }
+  };
 
   const askQuestion = async (event: FormEvent) => {
     event.preventDefault();
@@ -51,7 +94,9 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/ask", {
+      const endpoint = uploadedDocument ? "/api/ask-uploaded" : "/api/ask";
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,11 +109,7 @@ export default function Home() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.detail ||
-          data.error ||
-          "Something went wrong"
-        );
+        throw new Error(data.detail || data.error || "Something went wrong");
       }
 
       setMessages((previous) => [
@@ -104,7 +145,24 @@ export default function Home() {
       <header className="header">
         <div>
           <h1>AI Knowledge Assistant</h1>
-          <p>Ask questions about your uploaded knowledge base</p>
+
+          <p>
+            {uploadedDocument
+              ? `Currently using: ${uploadedDocument}`
+              : "Upload a PDF and ask questions about it"}
+          </p>
+
+          <label className="upload-button">
+            {uploading ? "Processing PDF..." : "📄 Upload PDF"}
+
+            <input
+              type="file"
+              accept=".pdf,application/pdf"
+              onChange={uploadPDF}
+              disabled={uploading}
+              hidden
+            />
+          </label>
         </div>
 
         {messages.length > 0 && (
@@ -121,9 +179,7 @@ export default function Home() {
 
             <h2>How can I help you?</h2>
 
-            <p>
-              Ask me anything based on the documents in my knowledge base.
-            </p>
+            <p>Ask me anything based on the documents in my knowledge base.</p>
 
             <div className="suggestions">
               <button
@@ -136,9 +192,7 @@ export default function Home() {
 
               <button
                 onClick={() =>
-                  setQuestion(
-                    "What is the efficiency of Euclid's algorithm?"
-                  )
+                  setQuestion("What is the efficiency of Euclid's algorithm?")
                 }
               >
                 Explain algorithm efficiency
@@ -148,19 +202,12 @@ export default function Home() {
         ) : (
           <div className="messages">
             {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`message ${message.role}`}
-              >
+              <div key={index} className={`message ${message.role}`}>
                 <div className="message-label">
-                  {message.role === "user"
-                    ? "You"
-                    : "AI Assistant"}
+                  {message.role === "user" ? "You" : "AI Assistant"}
                 </div>
 
-                <div className="message-content">
-                  {message.content}
-                </div>
+                <div className="message-content">{message.content}</div>
 
                 {message.role === "assistant" &&
                   message.sources &&
@@ -168,20 +215,14 @@ export default function Home() {
                     <div className="sources">
                       <h4>📚 Sources</h4>
 
-                      {message.sources.map(
-                        (source, sourceIndex) => (
-                          <div
-                            className="source"
-                            key={sourceIndex}
-                          >
-                            📄 {source.source} — Page{" "}
-                            {source.page_start ===
-                            source.page_end
-                              ? source.page_start
-                              : `${source.page_start}-${source.page_end}`}
-                          </div>
-                        )
-                      )}
+                      {message.sources.map((source, sourceIndex) => (
+                        <div className="source" key={sourceIndex}>
+                          📄 {source.source} — Page{" "}
+                          {source.page_start === source.page_end
+                            ? source.page_start
+                            : `${source.page_start}-${source.page_end}`}
+                        </div>
+                      ))}
                     </div>
                   )}
               </div>
@@ -189,9 +230,7 @@ export default function Home() {
 
             {loading && (
               <div className="message assistant">
-                <div className="message-label">
-                  AI Assistant
-                </div>
+                <div className="message-label">AI Assistant</div>
 
                 <div className="typing">
                   Thinking<span>.</span>
@@ -211,16 +250,11 @@ export default function Home() {
           type="text"
           placeholder="Ask a question about your knowledge base..."
           value={question}
-          onChange={(event) =>
-            setQuestion(event.target.value)
-          }
+          onChange={(event) => setQuestion(event.target.value)}
           disabled={loading}
         />
 
-        <button
-          type="submit"
-          disabled={loading || !question.trim()}
-        >
+        <button type="submit" disabled={loading || !question.trim()}>
           {loading ? "Thinking..." : "Send"}
         </button>
       </form>
