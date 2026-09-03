@@ -13,6 +13,7 @@ interface Message {
   content: string;
   sources?: Source[];
   retrieval_score?: number | null;
+  answered?: boolean;
 }
 
 function groupSources(sources: Source[]) {
@@ -117,6 +118,58 @@ export default function Home() {
     }
   };
 
+  const summarizeDocument = async () => {
+    if (!uploadedDocument || loading) return;
+
+    const summaryRequest = "Can you summarize this document?";
+
+    setMessages((previous) => [
+      ...previous,
+      {
+        role: "user",
+        content: summaryRequest,
+      },
+    ]);
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/summarize-uploaded", {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Unable to summarize the document.");
+      }
+
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content: data.answer,
+          sources: data.sources,
+          retrieval_score: data.retrieval_score,
+          answered: data.answered,
+        },
+      ]);
+    } catch (error) {
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content:
+            error instanceof Error
+              ? error.message
+              : "Sorry, something went wrong while summarizing.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const askQuestion = async (event: FormEvent) => {
     event.preventDefault();
 
@@ -161,6 +214,7 @@ export default function Home() {
           content: data.answer,
           sources: data.sources,
           retrieval_score: data.retrieval_score,
+          answered: data.answered,
         },
       ]);
     } catch (error) {
@@ -278,7 +332,8 @@ export default function Home() {
               </button>
 
               <button
-                onClick={() => setQuestion("Can you summarize this document?")}
+                onClick={summarizeDocument}
+                disabled={!uploadedDocument || loading}
               >
                 Summarize this document
               </button>

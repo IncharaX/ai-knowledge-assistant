@@ -213,6 +213,7 @@ def ask_uploaded_question(
     response_model=AnswerResponse,
     summary="Summarize the uploaded PDF",
 )
+
 def summarize_uploaded_document():
     if uploaded_pipeline is None:
         raise HTTPException(

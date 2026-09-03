@@ -1,4 +1,6 @@
 
+from unittest import result
+
 from app.embeddings.model import EmbeddingModel
 from app.generation.generator import RAGGenerator
 from app.keyword_search.bm25 import BM25Retriever
@@ -133,7 +135,7 @@ class UploadedDocumentPipeline:
 
         document_chunks = self.document_chunks[:10]
 
-        return self.generator.answer(
+        result = self.generator.answer(
             question=(
                 "Provide a clear and concise summary of the "
                 "uploaded document. Cover the main topics, "
@@ -141,6 +143,10 @@ class UploadedDocumentPipeline:
             ),
             chunks=document_chunks,
         )
+
+        result["answered"] = True
+
+        return result
 
     def _add_results(
         self,
