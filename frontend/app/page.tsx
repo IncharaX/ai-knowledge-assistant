@@ -126,6 +126,57 @@ export default function Home() {
     }
   };
 
+  const askMainTopic = async () => {
+    if (!uploadedDocument || loading) return;
+
+    const topicQuestion = "What is the main topic of this document?";
+
+    setMessages((previous) => [
+      ...previous,
+      {
+        role: "user",
+        content: topicQuestion,
+      },
+    ]);
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/main-topic-uploaded", {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Unable to identify the main topic.");
+      }
+
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content: data.answer,
+          sources: data.sources,
+          retrieval_score: data.retrieval_score,
+          answered: data.answered,
+        },
+      ]);
+    } catch (error) {
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content:
+            error instanceof Error
+              ? error.message
+              : "Sorry, something went wrong.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const summarizeDocument = async (
     requestText = "Can you summarize this document?",
@@ -334,16 +385,14 @@ export default function Home() {
 
             <div className="suggestions">
               <button
-                onClick={() =>
-                  summarizeDocument("What is the main topic of this document?")
-                }
+                onClick={askMainTopic}
                 disabled={!uploadedDocument || loading}
               >
                 What is the main topic?
               </button>
 
               <button
-                onClick={summarizeDocument}
+                onClick={() => summarizeDocument()}
                 disabled={!uploadedDocument || loading}
               >
                 Summarize this document
