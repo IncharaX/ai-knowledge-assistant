@@ -10,7 +10,7 @@ export async function POST() {
       `${RETRIEVAL_SERVICE_URL}/main-topic-uploaded`,
       {
         method: "POST",
-      },
+      }
     );
 
     const data = await response.json();
@@ -18,7 +18,7 @@ export async function POST() {
     if (!response.ok) {
       return NextResponse.json(
         data,
-        { status: response.status },
+        { status: response.status }
       );
     }
 
@@ -29,7 +29,7 @@ export async function POST() {
         detail:
           "Unable to connect to the retrieval service.",
       },
-      { status: 503 },
+      { status: 503 }
     );
   }
 }
