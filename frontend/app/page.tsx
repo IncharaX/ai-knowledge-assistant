@@ -43,7 +43,15 @@ function groupSources(sources: Source[]) {
 function getConfidenceLabel(
   score: number | null | undefined,
   hasSources: boolean,
+  answered?: boolean,
 ) {
+  if (answered === true) {
+    return {
+      label: "Grounded answer",
+      className: "confidence-high",
+    };
+  }
+
   if (!hasSources || score === null || score === undefined) {
     return {
       label: "Not enough information",
@@ -115,6 +123,64 @@ export default function Home() {
       setUploading(false);
 
       event.target.value = "";
+    }
+  };
+
+  const askMainTopic = async () => {
+    if (!uploadedDocument || loading) return;
+
+    const topicQuestion = "What is the main topic of this document?";
+
+    setMessages((previous) => [
+      ...previous,
+      {
+        role: "user",
+        content: topicQuestion,
+      },
+    ]);
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/ask-uploaded", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: topicQuestion,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Unable to answer the question.");
+      }
+
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content: data.answer,
+          sources: data.sources,
+          retrieval_score: data.retrieval_score,
+          answered: data.answered,
+        },
+      ]);
+    } catch (error) {
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content:
+            error instanceof Error
+              ? error.message
+              : "Sorry, something went wrong.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -324,9 +390,8 @@ export default function Home() {
 
             <div className="suggestions">
               <button
-                onClick={() =>
-                  setQuestion("What is the main topic of this document?")
-                }
+                onClick={askMainTopic}
+                disabled={!uploadedDocument || loading}
               >
                 What is the main topic?
               </button>
@@ -352,6 +417,7 @@ export default function Home() {
                     const confidence = getConfidenceLabel(
                       message.retrieval_score,
                       Boolean(message.sources?.length),
+                      message.answered,
                     );
 
                     return (
