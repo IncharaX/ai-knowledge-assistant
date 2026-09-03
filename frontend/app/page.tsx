@@ -126,63 +126,6 @@ export default function Home() {
     }
   };
 
-  const askMainTopic = async () => {
-    if (!uploadedDocument || loading) return;
-
-    const topicQuestion = "What is the main topic of this document?";
-
-    setMessages((previous) => [
-      ...previous,
-      {
-        role: "user",
-        content: topicQuestion,
-      },
-    ]);
-
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/ask-uploaded", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          question: topicQuestion,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Unable to answer the question.");
-      }
-
-      setMessages((previous) => [
-        ...previous,
-        {
-          role: "assistant",
-          content: data.answer,
-          sources: data.sources,
-          retrieval_score: data.retrieval_score,
-          answered: data.answered,
-        },
-      ]);
-    } catch (error) {
-      setMessages((previous) => [
-        ...previous,
-        {
-          role: "assistant",
-          content:
-            error instanceof Error
-              ? error.message
-              : "Sorry, something went wrong.",
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const summarizeDocument = async (
     requestText = "Can you summarize this document?",

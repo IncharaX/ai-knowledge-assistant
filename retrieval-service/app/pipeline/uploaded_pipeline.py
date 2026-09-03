@@ -148,6 +148,26 @@ class UploadedDocumentPipeline:
 
         return result
 
+    def get_main_topic(self) -> dict:
+        """
+        Identify the main topic of the uploaded document.
+        """
+
+        document_chunks = self.document_chunks[:10]
+
+        result = self.generator.answer(
+            question=(
+                "What is the main topic of this uploaded document? "
+                "Answer briefly and clearly. Focus on the central "
+                "subject or purpose of the document."
+            ),
+            chunks=document_chunks,
+        )
+
+        result["answered"] = True
+
+        return result
+
     def _add_results(
         self,
         fused_results: dict[str, dict],

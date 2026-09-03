@@ -232,3 +232,27 @@ def summarize_uploaded_document():
             status_code=503,
             detail=str(error),
         )
+
+@app.post(
+    "/main-topic-uploaded",
+    response_model=AnswerResponse,
+    summary="Get the main topic of the uploaded PDF",
+)
+def get_uploaded_main_topic():
+    if uploaded_pipeline is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Please upload a PDF before requesting "
+                "its main topic."
+            ),
+        )
+
+    try:
+        return uploaded_pipeline.get_main_topic()
+
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        )    
