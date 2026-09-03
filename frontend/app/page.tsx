@@ -184,11 +184,12 @@ export default function Home() {
     }
   };
 
-  const summarizeDocument = async () => {
+  const summarizeDocument = async (
+    requestText = "Can you summarize this document?",
+  ) => {
     if (!uploadedDocument || loading) return;
 
-    const summaryRequest = "Can you summarize this document?";
-
+    const summaryRequest = requestText;
     setMessages((previous) => [
       ...previous,
       {
@@ -390,7 +391,9 @@ export default function Home() {
 
             <div className="suggestions">
               <button
-                onClick={askMainTopic}
+                onClick={() =>
+                  summarizeDocument("What is the main topic of this document?")
+                }
                 disabled={!uploadedDocument || loading}
               >
                 What is the main topic?
