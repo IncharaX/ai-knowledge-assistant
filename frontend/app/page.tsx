@@ -271,18 +271,16 @@ export default function Home() {
             <div className="suggestions">
               <button
                 onClick={() =>
-                  setQuestion("Explain Euclid's algorithm for finding GCD.")
+                  setQuestion("What is the main topic of this document?")
                 }
               >
-                Explain Euclid&apos;s algorithm
+                What is the main topic?
               </button>
 
               <button
-                onClick={() =>
-                  setQuestion("What is the efficiency of Euclid's algorithm?")
-                }
+                onClick={() => setQuestion("Can you summarize this document?")}
               >
-                Explain algorithm efficiency
+                Summarize this document
               </button>
             </div>
           </div>

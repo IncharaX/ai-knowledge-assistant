@@ -1,4 +1,3 @@
-from unittest import result
 
 from app.embeddings.model import EmbeddingModel
 from app.generation.generator import RAGGenerator
@@ -31,13 +30,15 @@ class UploadedDocumentPipeline:
         bm25_chunks: list[dict],
         embedding_model: EmbeddingModel,
     ) -> None:
+        self.document_chunks = bm25_chunks
+
         self.semantic_retriever = SemanticRetriever(
-            collection_name=collection_name,
-            embedding_model=embedding_model,
+        collection_name=collection_name,
+        embedding_model=embedding_model,
         )
 
         self.bm25_retriever = BM25Retriever(
-            chunks=bm25_chunks
+        chunks=bm25_chunks
         )
 
         self.reranker = CrossEncoderReranker()
@@ -124,6 +125,22 @@ class UploadedDocumentPipeline:
         result["retrieval_score"] = confidence_result["top_score"]
 
         return result
+
+    def summarize(self) -> dict:
+        """
+        Generate a summary using the uploaded document.
+        """
+
+        document_chunks = self.document_chunks[:10]
+
+        return self.generator.answer(
+            question=(
+                "Provide a clear and concise summary of the "
+                "uploaded document. Cover the main topics, "
+                "important points, and key conclusions."
+            ),
+            chunks=document_chunks,
+        )
 
     def _add_results(
         self,

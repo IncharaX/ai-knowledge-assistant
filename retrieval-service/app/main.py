@@ -206,3 +206,28 @@ def ask_uploaded_question(
             status_code=503,
             detail=str(error),
         )
+
+
+@app.post(
+    "/summarize-uploaded",
+    response_model=AnswerResponse,
+    summary="Summarize the uploaded PDF",
+)
+def summarize_uploaded_document():
+    if uploaded_pipeline is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Please upload a PDF before requesting "
+                "a document summary."
+            ),
+        )
+
+    try:
+        return uploaded_pipeline.summarize()
+
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error),
+        )
